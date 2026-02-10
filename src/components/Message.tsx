@@ -1,0 +1,136 @@
+import React, { useState, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import type { Message as MessageType } from '../types';
+import { getModelConfig } from '../utils/api';
+
+interface Props {
+  message: MessageType;
+}
+
+export const Message: React.FC<Props> = ({ message }) => {
+  const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const isUser = message.role === 'user';
+  const model = message.model ? getModelConfig(message.model) : undefined;
+  const time = new Date(message.timestamp).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(message.content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [message.content]);
+
+  const handleCodeCopy = useCallback((code: string) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    });
+  }, []);
+
+  return (
+    <div className={`group animate-slide-up ${isUser ? 'flex justify-end' : ''}`}>
+      <div
+        className={`
+          relative rounded-2xl px-3.5 sm:px-5 py-3 sm:py-3.5
+          max-w-[92%] sm:max-w-[85%] md:max-w-[80%] lg:max-w-[75%]
+          ${isUser
+            ? 'bg-accent text-white rounded-br-md'
+            : 'bg-surface-100 dark:bg-surface-800 text-surface-900 dark:text-surface-100 rounded-bl-md'
+          }
+        `}
+      >
+        {/* Meta bar */}
+        <div
+          className={`flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 text-[10px] sm:text-[11px] tracking-wide uppercase font-medium ${
+            isUser ? 'text-white/60' : 'text-surface-400 dark:text-surface-500'
+          }`}
+        >
+          <span>{isUser ? 'You' : model?.name || 'Assistant'}</span>
+          <span className={isUser ? 'text-white/30' : 'text-surface-300 dark:text-surface-600'}>·</span>
+          <span>{time}</span>
+        </div>
+
+        {/* Content */}
+        <div
+          className={`
+            prose prose-sm max-w-none break-words
+            ${isUser
+              ? 'prose-invert prose-p:text-white/95 prose-a:text-white prose-strong:text-white prose-code:text-white/90'
+              : 'dark:prose-invert prose-p:text-surface-800 dark:prose-p:text-surface-200 prose-code:text-accent dark:prose-code:text-accent-hover'
+            }
+            prose-pre:bg-surface-900 prose-pre:dark:bg-surface-950
+            prose-pre:rounded-xl prose-pre:border prose-pre:border-surface-200 prose-pre:dark:border-surface-700
+            prose-pre:text-[13px] prose-pre:leading-relaxed
+            prose-headings:mt-3 prose-headings:mb-1.5
+            prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5
+          `}
+        >
+          {isUser ? (
+            <p className="whitespace-pre-wrap m-0">{message.content}</p>
+          ) : (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+              components={{
+                pre: ({ children, ...props }) => {
+                  // Extract code text from children
+                  const codeEl = React.Children.toArray(children).find(
+                    (child): child is React.ReactElement => React.isValidElement(child) && child.type === 'code'
+                  );
+                  const codeText = codeEl?.props?.children;
+
+                  return (
+                    <div className="relative group/code">
+                      <pre {...props} className="!mt-2 !mb-2 overflow-x-auto !text-[13px]">
+                        {children}
+                      </pre>
+                      <button
+                        onClick={() => {
+                          if (typeof codeText === 'string') handleCodeCopy(codeText);
+                        }}
+                        className="absolute top-2 right-2 opacity-0 group-hover/code:opacity-100 touch-show transition-opacity bg-surface-700 hover:bg-surface-600 active:bg-surface-500 text-surface-300 text-xs px-2.5 py-1.5 rounded-lg"
+                      >
+                        {codeCopied ? '✓' : 'Copy'}
+                      </button>
+                    </div>
+                  );
+                },
+                // Make tables horizontally scrollable on mobile
+                table: ({ children, ...props }) => (
+                  <div className="overflow-x-auto -mx-1 sm:mx-0">
+                    <table {...props}>{children}</table>
+                  </div>
+                ),
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          )}
+        </div>
+
+        {/* Copy button — visible on hover (desktop) or always present on touch */}
+        <button
+          onClick={handleCopy}
+          className={`
+            absolute -bottom-3 right-3
+            opacity-0 group-hover:opacity-100 touch-show
+            transition-all text-[11px] px-2.5 py-1.5 rounded-full border shadow-sm
+            active:scale-95
+            ${isUser
+              ? 'bg-accent-dim/80 border-accent/30 text-white/80 hover:text-white active:bg-accent-dim'
+              : 'bg-white dark:bg-surface-700 border-surface-200 dark:border-surface-600 text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-200'
+            }
+          `}
+        >
+          {copied ? '✓ Copied' : 'Copy'}
+        </button>
+      </div>
+    </div>
+  );
+};

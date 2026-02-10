@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.surface.300') transparent;
+  }
+
+  .dark *,
+  .dark *::before,
+  .dark *::after {
+    scrollbar-color: theme('colors.surface.700') transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: theme('colors.surface.300');
+    border-radius: 9999px;
+  }
+
+  .dark *::-webkit-scrollbar-thumb {
+    background-color: theme('colors.surface.700');
+  }
+
+  html {
+    /* Prevent iOS overscroll bounce on the body */
+    overflow: hidden;
+    height: 100%;
+  }
+
+  body {
+    @apply bg-white text-surface-900 dark:bg-surface-900 dark:text-surface-100;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    overflow: hidden;
+    height: 100%;
+    /* iOS safe area support */
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  ::selection {
+    @apply bg-accent/20 text-accent;
+  }
+
+  /* Prevent iOS input zoom — ensures font >= 16px on focus */
+  @media screen and (max-width: 768px) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Safe area insets */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* Touch device detection — show actions without hover */
+  @media (hover: none) and (pointer: coarse) {
+    .touch-show {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+  }
+}
+
+/* Prose tweaks for code */
+.prose pre {
+  @apply !bg-surface-950 !text-surface-200;
+}
+
+.prose code {
+  @apply px-1.5 py-0.5 rounded-md text-[13px] font-mono;
+}
+
+.prose :where(code):not(:where([class~="not-prose"],[class~="not-prose"] *))::before,
+.prose :where(code):not(:where([class~="not-prose"],[class~="not-prose"] *))::after {
+  content: none;
+}
+
+.prose pre code {
+  @apply px-0 py-0 bg-transparent rounded-none text-inherit;
+}
+
+/* highlight.js theme - minimal dark */
+.hljs {
+  @apply text-surface-200;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in {
+  @apply text-violet-400;
+}
+.hljs-string,
+.hljs-attr {
+  @apply text-emerald-400;
+}
+.hljs-comment {
+  @apply text-surface-500 italic;
+}
+.hljs-number,
+.hljs-literal {
+  @apply text-amber-400;
+}
+.hljs-function .hljs-title,
+.hljs-title.function_ {
+  @apply text-blue-400;
+}
+.hljs-type,
+.hljs-title.class_ {
+  @apply text-cyan-400;
+}
+.hljs-variable,
+.hljs-template-variable {
+  @apply text-rose-400;
+}
+.hljs-meta {
+  @apply text-surface-400;
+}
