@@ -50,6 +50,7 @@ interface ChatState {
   conversations: Conversation[];
   activeConversationId: string | null;
   apiKeys: ApiKeys;
+  proxyUrl: string;
   storageMode: StorageMode;
   theme: 'dark' | 'light';
   isStreaming: boolean;
@@ -62,6 +63,7 @@ interface ChatState {
   setSidebarOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
   setApiKey: (provider: keyof ApiKeys, key: string) => void;
+  setProxyUrl: (url: string) => void;
   setStorageMode: (mode: StorageMode) => void;
 
   createConversation: () => string;
@@ -88,6 +90,7 @@ export const useChatStore = create<ChatState>((set, get) => {
     conversations: loadConversations(),
     activeConversationId: null,
     apiKeys: loadApiKeys(initialStorageMode),
+    proxyUrl: localStorage.getItem('sc-proxy-url') || '',
     storageMode: initialStorageMode,
     theme: loadTheme(),
     isStreaming: false,
@@ -112,6 +115,13 @@ export const useChatStore = create<ChatState>((set, get) => {
       const keys = { ...get().apiKeys, [provider]: key };
       saveApiKeys(keys, get().storageMode);
       set({ apiKeys: keys });
+    },
+
+    setProxyUrl: (url) => {
+      // Normalize: strip trailing slash
+      const cleaned = url.trim().replace(/\/+$/, '');
+      localStorage.setItem('sc-proxy-url', cleaned);
+      set({ proxyUrl: cleaned });
     },
 
     setStorageMode: (mode) => {

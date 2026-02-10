@@ -20,6 +20,7 @@ export const ChatWindow: React.FC = () => {
     isStreaming,
     setStreaming,
     apiKeys,
+    proxyUrl,
     setConversationModel,
     setConversationSystemPrompt,
     setSidebarOpen,
@@ -95,6 +96,7 @@ export const ChatWindow: React.FC = () => {
       modelId,
       apiKey,
       systemPrompt: conv.systemPrompt || undefined,
+      proxyUrl: proxyUrl || undefined,
       signal: abortController.signal,
       onChunk: (text) => {
         accumulated += text;
@@ -110,7 +112,7 @@ export const ChatWindow: React.FC = () => {
         abortRef.current = null;
       },
     });
-  }, [input, isStreaming, conversation, apiKeys, addMessage, updateMessage, setStreaming, createConversation]);
+  }, [input, isStreaming, conversation, apiKeys, proxyUrl, addMessage, updateMessage, setStreaming, createConversation]);
 
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
@@ -332,7 +334,9 @@ export const ChatWindow: React.FC = () => {
           )}
         </div>
         <p className="text-[10px] sm:text-[11px] text-center text-surface-400 dark:text-surface-500 mt-2 hidden sm:block">
-          API calls go directly to the provider. Nothing is stored on any server.
+          {proxyUrl
+            ? `Proxied via ${(() => { try { return new URL(proxyUrl).hostname; } catch { return 'proxy'; } })()}. Your key is forwarded but never stored.`
+            : 'API calls go directly to the provider. Nothing is stored on any server.'}
         </p>
       </div>
     </div>

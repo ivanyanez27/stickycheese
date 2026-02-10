@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "stickycheese-proxy",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-12-01",
+
+  // Optional: restrict to your frontend origin(s)
+  // Set this in Cloudflare dashboard → Worker → Settings → Variables
+  // "vars": {
+  //   "ALLOWED_ORIGINS": "https://chat.yourdomain.com"
+  // }
+}

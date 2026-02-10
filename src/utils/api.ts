@@ -14,6 +14,7 @@ interface StreamParams {
   modelId: string;
   apiKey: string;
   systemPrompt?: string;
+  proxyUrl?: string;
   onChunk: (text: string) => void;
   onDone: () => void;
   onError: (error: string) => void;
@@ -21,7 +22,7 @@ interface StreamParams {
 }
 
 export async function streamChat(params: StreamParams) {
-  const { messages, modelId, apiKey, systemPrompt, onChunk, onDone, onError, signal } = params;
+  const { messages, modelId, apiKey, systemPrompt, proxyUrl, onChunk, onDone, onError, signal } = params;
   const provider = getProviderForModel(modelId);
 
   if (!provider) {
@@ -36,9 +37,9 @@ export async function streamChat(params: StreamParams) {
 
   try {
     if (provider === 'openai') {
-      await streamOpenAI({ messages, modelId, apiKey, systemPrompt, onChunk, onDone, onError, signal });
+      await streamOpenAI({ messages, modelId, apiKey, systemPrompt, proxyUrl, onChunk, onDone, onError, signal });
     } else {
-      await streamAnthropic({ messages, modelId, apiKey, systemPrompt, onChunk, onDone, onError, signal });
+      await streamAnthropic({ messages, modelId, apiKey, systemPrompt, proxyUrl, onChunk, onDone, onError, signal });
     }
   } catch (err: any) {
     if (err.name === 'AbortError') return;
@@ -46,8 +47,24 @@ export async function streamChat(params: StreamParams) {
   }
 }
 
+/**
+ * Resolve the endpoint URL.
+ * If proxyUrl is set:   proxyUrl + /openai/v1/chat/completions
+ * Otherwise:            https://api.openai.com/v1/chat/completions
+ */
+function resolveUrl(proxyUrl: string | undefined, provider: string, path: string): string {
+  if (proxyUrl) {
+    return `${proxyUrl}/${provider}${path}`;
+  }
+  const hosts: Record<string, string> = {
+    openai: 'https://api.openai.com',
+    anthropic: 'https://api.anthropic.com',
+  };
+  return `${hosts[provider]}${path}`;
+}
+
 async function streamOpenAI(params: StreamParams) {
-  const { messages, modelId, apiKey, systemPrompt, onChunk, onDone, onError, signal } = params;
+  const { messages, modelId, apiKey, systemPrompt, proxyUrl, onChunk, onDone, onError, signal } = params;
 
   const apiMessages: { role: string; content: string }[] = [];
   if (systemPrompt) {
@@ -70,7 +87,9 @@ async function streamOpenAI(params: StreamParams) {
     body.max_tokens = 4096;
   }
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const url = resolveUrl(proxyUrl, 'openai', '/v1/chat/completions');
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -130,7 +149,7 @@ async function streamOpenAI(params: StreamParams) {
 }
 
 async function streamAnthropic(params: StreamParams) {
-  const { messages, modelId, apiKey, systemPrompt, onChunk, onDone, onError, signal } = params;
+  const { messages, modelId, apiKey, systemPrompt, proxyUrl, onChunk, onDone, onError, signal } = params;
 
   const apiMessages: { role: string; content: string }[] = [];
   for (const msg of messages) {
@@ -148,14 +167,21 @@ async function streamAnthropic(params: StreamParams) {
     body.system = systemPrompt;
   }
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const url = resolveUrl(proxyUrl, 'anthropic', '/v1/messages');
+
+  // When going through the proxy, we don't need the dangerous direct browser access header
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-api-key': apiKey,
+    'anthropic-version': '2023-06-01',
+  };
+  if (!proxyUrl) {
+    headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  }
+
+  const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers,
     body: JSON.stringify(body),
     signal,
   });

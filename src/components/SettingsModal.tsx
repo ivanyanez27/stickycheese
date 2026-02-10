@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useChatStore } from '../stores/chatStore';
 
 export const SettingsModal: React.FC = () => {
-  const { settingsOpen, setSettingsOpen, apiKeys, setApiKey, storageMode, setStorageMode } =
+  const { settingsOpen, setSettingsOpen, apiKeys, setApiKey, proxyUrl, setProxyUrl, storageMode, setStorageMode } =
     useChatStore();
   const [showOpenAI, setShowOpenAI] = useState(false);
   const [showAnthropic, setShowAnthropic] = useState(false);
@@ -48,7 +48,7 @@ export const SettingsModal: React.FC = () => {
               API Keys
             </h3>
             <p className="text-xs text-surface-500 dark:text-surface-400 mb-4 leading-relaxed">
-              Keys are stored only in your browser and sent directly to the provider.
+              Keys are stored only in your browser. They are sent to the provider (directly or via your proxy) and never persisted server-side.
             </p>
 
             {/* OpenAI */}
@@ -108,6 +108,38 @@ export const SettingsModal: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* API Proxy */}
+          <div>
+            <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-1">
+              API Proxy
+              <span className="ml-2 text-[10px] uppercase tracking-wider font-semibold text-surface-500 dark:text-surface-400 bg-surface-100 dark:bg-surface-800 px-1.5 py-0.5 rounded-md">
+                Optional
+              </span>
+            </h3>
+            <p className="text-xs text-surface-500 dark:text-surface-400 mb-3 leading-relaxed">
+              Route API calls through a Cloudflare Worker proxy to avoid CORS issues and keep your API key off the browser network tab. The proxy never stores your key.
+            </p>
+            <input
+              type="url"
+              value={proxyUrl}
+              onChange={(e) => setProxyUrl(e.target.value)}
+              placeholder="https://stickycheese-proxy.yourname.workers.dev"
+              autoComplete="off"
+              className="w-full bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl px-3.5 py-3 text-surface-900 dark:text-surface-100 placeholder:text-surface-400 focus:outline-none focus:ring-2 focus:ring-accent/30 font-mono text-xs"
+            />
+            {proxyUrl && (
+              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Proxy enabled — calls route through {(() => { try { return new URL(proxyUrl).hostname; } catch { return proxyUrl; } })()}
+              </div>
+            )}
+            {!proxyUrl && (
+              <p className="text-[11px] text-surface-400 dark:text-surface-500 mt-1.5">
+                Leave empty to call providers directly from the browser.
+              </p>
+            )}
           </div>
 
           {/* Storage mode */}
@@ -183,7 +215,8 @@ export const SettingsModal: React.FC = () => {
           <div className="pt-2 border-t border-surface-200 dark:border-surface-800">
             <p className="text-xs text-surface-400 dark:text-surface-500 leading-relaxed">
               This is a fully client-side application. Your API keys and conversations never leave your
-              browser. API calls are made directly to the respective providers (OpenAI, Anthropic).
+              browser. API calls go directly to the provider, or through your own proxy if configured —
+              either way, nothing is stored server-side.
             </p>
           </div>
         </div>
