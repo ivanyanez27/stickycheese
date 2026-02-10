@@ -108,7 +108,7 @@ export const Sidebar: React.FC = () => {
         <div className="px-4 py-4 flex items-center justify-between border-b border-surface-200 dark:border-surface-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#18181b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
             <span className="font-semibold text-surface-900 dark:text-surface-100 text-sm tracking-tight">
               StickyCheese
@@ -127,7 +127,7 @@ export const Sidebar: React.FC = () => {
         <div className="px-3 py-3 shrink-0">
           <button
             onClick={handleNewChat}
-            className="w-full flex items-center justify-center gap-2.5 px-3.5 py-3 sm:py-2.5 rounded-xl bg-accent hover:bg-accent-hover active:scale-[0.98] text-white text-sm font-medium transition-all"
+            className="w-full flex items-center justify-center gap-2.5 px-3.5 py-3 sm:py-2.5 rounded-xl bg-accent hover:bg-accent-hover active:scale-[0.98] text-surface-900 text-sm font-medium transition-all"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             New Chat

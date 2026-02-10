@@ -166,7 +166,7 @@ export const ChatWindow: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto px-4 sm:px-0">
           <button
             onClick={createConversation}
-            className="px-5 py-3 sm:py-2.5 bg-accent hover:bg-accent-hover active:scale-[0.98] text-white rounded-xl font-medium transition-all"
+            className="px-5 py-3 sm:py-2.5 bg-accent hover:bg-accent-hover active:scale-[0.98] text-surface-900 rounded-xl font-medium transition-all"
           >
             New Chat
           </button>
@@ -323,7 +323,7 @@ export const ChatWindow: React.FC = () => {
             <button
               onClick={handleSend}
               disabled={!input.trim()}
-              className="shrink-0 w-11 h-11 sm:w-auto sm:h-auto sm:p-3 flex items-center justify-center rounded-2xl bg-accent hover:bg-accent-hover active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-all"
+              className="shrink-0 w-11 h-11 sm:w-auto sm:h-auto sm:p-3 flex items-center justify-center rounded-2xl bg-accent hover:bg-accent-hover active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed text-surface-900 transition-all"
               title="Send message"
               aria-label="Send message"
             >

@@ -24,10 +24,10 @@ export default {
           950: '#0f0f12',
         },
         accent: {
-          DEFAULT: '#6366f1',
-          hover: '#818cf8',
-          dim: '#4f46e5',
-          muted: 'rgba(99, 102, 241, 0.15)',
+          DEFAULT: '#eab308',
+          hover: '#facc15',
+          dim: '#ca8a04',
+          muted: 'rgba(234, 179, 8, 0.15)',
         },
       },
       animation: {

@@ -40,7 +40,7 @@ export const Message: React.FC<Props> = ({ message }) => {
           relative rounded-2xl px-3.5 sm:px-5 py-3 sm:py-3.5
           max-w-[92%] sm:max-w-[85%] md:max-w-[80%] lg:max-w-[75%]
           ${isUser
-            ? 'bg-accent text-white rounded-br-md'
+            ? 'bg-accent text-surface-900 rounded-br-md'
             : 'bg-surface-100 dark:bg-surface-800 text-surface-900 dark:text-surface-100 rounded-bl-md'
           }
         `}
@@ -48,11 +48,11 @@ export const Message: React.FC<Props> = ({ message }) => {
         {/* Meta bar */}
         <div
           className={`flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 text-[10px] sm:text-[11px] tracking-wide uppercase font-medium ${
-            isUser ? 'text-white/60' : 'text-surface-400 dark:text-surface-500'
+            isUser ? 'text-surface-900/50' : 'text-surface-400 dark:text-surface-500'
           }`}
         >
           <span>{isUser ? 'You' : model?.name || 'Assistant'}</span>
-          <span className={isUser ? 'text-white/30' : 'text-surface-300 dark:text-surface-600'}>·</span>
+          <span className={isUser ? 'text-surface-900/25' : 'text-surface-300 dark:text-surface-600'}>·</span>
           <span>{time}</span>
         </div>
 
@@ -61,7 +61,7 @@ export const Message: React.FC<Props> = ({ message }) => {
           className={`
             prose prose-sm max-w-none break-words
             ${isUser
-              ? 'prose-invert prose-p:text-white/95 prose-a:text-white prose-strong:text-white prose-code:text-white/90'
+              ? 'prose-p:text-surface-900/90 prose-a:text-surface-900 prose-strong:text-surface-900 prose-code:text-surface-900/80'
               : 'dark:prose-invert prose-p:text-surface-800 dark:prose-p:text-surface-200 prose-code:text-accent dark:prose-code:text-accent-hover'
             }
             prose-pre:bg-surface-900 prose-pre:dark:bg-surface-950
@@ -123,7 +123,7 @@ export const Message: React.FC<Props> = ({ message }) => {
             transition-all text-[11px] px-2.5 py-1.5 rounded-full border shadow-sm
             active:scale-95
             ${isUser
-              ? 'bg-accent-dim/80 border-accent/30 text-white/80 hover:text-white active:bg-accent-dim'
+              ? 'bg-accent-dim/80 border-accent/30 text-surface-900/70 hover:text-surface-900 active:bg-accent-dim'
               : 'bg-white dark:bg-surface-700 border-surface-200 dark:border-surface-600 text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-200'
             }
           `}
