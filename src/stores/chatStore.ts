@@ -198,10 +198,20 @@ export const useChatStore = create<ChatState>((set, get) => {
       const msg: Message = { ...message, id: uid(), timestamp: Date.now() };
       const conversations = get().conversations.map((c) => {
         if (c.id !== conversationId) return c;
-        const title =
-          c.messages.length === 0 && message.role === 'user'
+        let title = c.title;
+        if (c.messages.length === 0 && message.role === 'user') {
+          const textPart = message.content
             ? message.content.slice(0, 50) + (message.content.length > 50 ? '…' : '')
-            : c.title;
+            : '';
+          const imageCount = message.images?.length || 0;
+          if (textPart && imageCount) {
+            title = textPart;
+          } else if (textPart) {
+            title = textPart;
+          } else if (imageCount) {
+            title = `Image${imageCount > 1 ? 's' : ''} shared`;
+          }
+        }
         return { ...c, title, messages: [...c.messages, msg], updatedAt: Date.now() };
       });
       saveConversations(conversations);
