@@ -56,6 +56,27 @@ export const Message: React.FC<Props> = ({ message }) => {
           <span>{time}</span>
         </div>
 
+        {/* Image attachments */}
+        {message.images && message.images.length > 0 && (
+          <div className={`flex flex-wrap gap-2 ${message.content ? 'mb-2' : ''}`}>
+            {message.images.map((img) => (
+              <a
+                key={img.id}
+                href={`data:${img.mediaType};base64,${img.data}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <img
+                  src={`data:${img.mediaType};base64,${img.data}`}
+                  alt={img.name || 'Attached image'}
+                  className="max-w-[240px] max-h-[240px] rounded-xl object-cover border border-surface-200 dark:border-surface-700 hover:opacity-90 transition-opacity cursor-pointer"
+                />
+              </a>
+            ))}
+          </div>
+        )}
+
         {/* Content */}
         <div
           className={`
@@ -72,7 +93,7 @@ export const Message: React.FC<Props> = ({ message }) => {
           `}
         >
           {isUser ? (
-            <p className="whitespace-pre-wrap m-0">{message.content}</p>
+            message.content ? <p className="whitespace-pre-wrap m-0">{message.content}</p> : null
           ) : (
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}

@@ -1,4 +1,4 @@
-import type { Message, Provider, ModelConfig } from '../types';
+import type { Message, Provider, ModelConfig, ImageAttachment } from '../types';
 import { MODELS } from '../types';
 
 export function getModelConfig(modelId: string): ModelConfig | undefined {
@@ -64,16 +64,46 @@ function resolveUrl(proxyUrl: string | undefined, provider: string, path: string
   return `${hosts[provider]}${path}`;
 }
 
+function buildOpenAIContent(msg: Message): string | Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }> {
+  if (!msg.images?.length) return msg.content;
+  const parts: Array<{ type: string; text?: string; image_url?: { url: string; detail?: string } }> = [];
+  if (msg.content) {
+    parts.push({ type: 'text', text: msg.content });
+  }
+  for (const img of msg.images) {
+    parts.push({
+      type: 'image_url',
+      image_url: { url: `data:${img.mediaType};base64,${img.data}`, detail: 'auto' },
+    });
+  }
+  return parts;
+}
+
+function buildAnthropicContent(msg: Message): string | Array<{ type: string; text?: string; source?: { type: string; media_type: string; data: string } }> {
+  if (!msg.images?.length) return msg.content;
+  const parts: Array<{ type: string; text?: string; source?: { type: string; media_type: string; data: string } }> = [];
+  for (const img of msg.images) {
+    parts.push({
+      type: 'image',
+      source: { type: 'base64', media_type: img.mediaType, data: img.data },
+    });
+  }
+  if (msg.content) {
+    parts.push({ type: 'text', text: msg.content });
+  }
+  return parts;
+}
+
 async function streamOpenAI(params: StreamParams) {
   const { messages, modelId, apiKey, systemPrompt, proxyUrl, onChunk, onDone, onError, signal } = params;
 
-  const apiMessages: { role: string; content: string }[] = [];
+  const apiMessages: { role: string; content: any }[] = [];
   if (systemPrompt) {
     apiMessages.push({ role: 'system', content: systemPrompt });
   }
   for (const msg of messages) {
     if (msg.role === 'system') continue;
-    apiMessages.push({ role: msg.role, content: msg.content });
+    apiMessages.push({ role: msg.role, content: buildOpenAIContent(msg) });
   }
 
   const isO1 = modelId.startsWith('o1');
@@ -152,10 +182,10 @@ async function streamOpenAI(params: StreamParams) {
 async function streamAnthropic(params: StreamParams) {
   const { messages, modelId, apiKey, systemPrompt, proxyUrl, onChunk, onDone, onError, signal } = params;
 
-  const apiMessages: { role: string; content: string }[] = [];
+  const apiMessages: { role: string; content: any }[] = [];
   for (const msg of messages) {
     if (msg.role === 'system') continue;
-    apiMessages.push({ role: msg.role, content: msg.content });
+    apiMessages.push({ role: msg.role, content: buildAnthropicContent(msg) });
   }
 
   const body: any = {

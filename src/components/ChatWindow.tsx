@@ -1,17 +1,51 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useChatStore } from '../stores/chatStore';
 import { Message } from './Message';
-import { streamChat, getProviderForModel } from '../utils/api';
+import { streamChat, getProviderForModel, getModelConfig } from '../utils/api';
 import { MODELS } from '../types';
+import type { ImageAttachment } from '../types';
 import { ApiKeyGuide } from './ApiKeyGuide';
+
+const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+const MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB
+
+function fileToImageAttachment(file: File): Promise<ImageAttachment> {
+  return new Promise((resolve, reject) => {
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      reject(new Error(`Unsupported image type: ${file.type}`));
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      reject(new Error('Image exceeds 20MB limit'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      // Strip the "data:image/...;base64," prefix
+      const base64 = dataUrl.split(',')[1];
+      resolve({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 9),
+        data: base64,
+        mediaType: file.type,
+        name: file.name,
+      });
+    };
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
+  });
+}
 
 export const ChatWindow: React.FC = () => {
   const [input, setInput] = useState('');
+  const [pendingImages, setPendingImages] = useState<ImageAttachment[]>([]);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -65,8 +99,59 @@ export const ChatWindow: React.FC = () => {
     };
   }, [menuOpen]);
 
+  const addImages = useCallback(async (files: File[]) => {
+    const imageFiles = files.filter((f) => ACCEPTED_IMAGE_TYPES.includes(f.type));
+    if (imageFiles.length === 0) return;
+    try {
+      const attachments = await Promise.all(imageFiles.map(fileToImageAttachment));
+      setPendingImages((prev) => [...prev, ...attachments]);
+    } catch {}
+  }, []);
+
+  const removeImage = useCallback((id: string) => {
+    setPendingImages((prev) => prev.filter((img) => img.id !== id));
+  }, []);
+
+  // Paste handler for images
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const files: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) files.push(file);
+        }
+      }
+      if (files.length > 0) {
+        e.preventDefault();
+        addImages(files);
+      }
+    };
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [addImages]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    addImages(files);
+  }, [addImages]);
+
   const handleSend = useCallback(async () => {
-    if (!input.trim() || isStreaming) return;
+    if ((!input.trim() && pendingImages.length === 0) || isStreaming) return;
 
     let convId = conversation?.id;
     if (!convId) {
@@ -78,8 +163,17 @@ export const ChatWindow: React.FC = () => {
     const provider = getProviderForModel(modelId);
     const apiKey = provider ? apiKeys[provider] : '';
 
-    addMessage(convId, { role: 'user', content: input.trim() });
+    const userMessage: { role: 'user'; content: string; images?: ImageAttachment[] } = {
+      role: 'user',
+      content: input.trim(),
+    };
+    if (pendingImages.length > 0) {
+      userMessage.images = [...pendingImages];
+    }
+
+    addMessage(convId, userMessage);
     setInput('');
+    setPendingImages([]);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
     // Create placeholder assistant message
@@ -114,7 +208,7 @@ export const ChatWindow: React.FC = () => {
         abortRef.current = null;
       },
     });
-  }, [input, isStreaming, conversation, apiKeys, proxyUrl, addMessage, updateMessage, setStreaming, createConversation]);
+  }, [input, pendingImages, isStreaming, conversation, apiKeys, proxyUrl, addMessage, updateMessage, setStreaming, createConversation]);
 
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
@@ -194,6 +288,9 @@ export const ChatWindow: React.FC = () => {
       </div>
     );
   }
+
+  const currentModelConfig = getModelConfig(conversation.modelId);
+  const currentModelSupportsVision = currentModelConfig?.supportsVision ?? false;
 
   const availableModels = MODELS.filter((m) => {
     if (m.provider === 'openai' && apiKeys.openai) return true;
@@ -311,15 +408,66 @@ export const ChatWindow: React.FC = () => {
       </div>
 
       {/* Input area */}
-      <div className="px-3 sm:px-4 lg:px-6 pt-3 pb-3 border-t border-surface-200 dark:border-surface-800 bg-white/80 dark:bg-surface-900/80 backdrop-blur-md shrink-0 pb-safe">
+      <div
+        className={`px-3 sm:px-4 lg:px-6 pt-3 pb-3 border-t border-surface-200 dark:border-surface-800 bg-white/80 dark:bg-surface-900/80 backdrop-blur-md shrink-0 pb-safe transition-colors ${dragOver ? 'ring-2 ring-accent ring-inset bg-accent/5' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {/* Pending image previews */}
+        {pendingImages.length > 0 && (
+          <div className="flex flex-wrap gap-2 max-w-4xl mx-auto mb-2">
+            {pendingImages.map((img) => (
+              <div key={img.id} className="relative group/img">
+                <img
+                  src={`data:${img.mediaType};base64,${img.data}`}
+                  alt={img.name || 'Pending image'}
+                  className="w-16 h-16 rounded-xl object-cover border border-surface-200 dark:border-surface-700"
+                />
+                <button
+                  onClick={() => removeImage(img.id)}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover/img:opacity-100 touch-show transition-opacity hover:bg-red-600"
+                  aria-label="Remove image"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="flex items-end gap-2 sm:gap-3 max-w-4xl mx-auto">
+          {/* Image upload button */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files) {
+                addImages(Array.from(e.target.files));
+                e.target.value = '';
+              }
+            }}
+          />
+          {currentModelSupportsVision && (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isStreaming}
+              className="shrink-0 w-11 h-11 sm:w-auto sm:h-auto sm:p-3 flex items-center justify-center rounded-2xl text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              title="Attach image"
+              aria-label="Attach image"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </button>
+          )}
           <div className="flex-1 relative">
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message…"
+              placeholder={currentModelSupportsVision ? 'Type a message or paste an image…' : 'Type a message…'}
               rows={1}
               disabled={isStreaming}
               className="w-full bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-2xl px-4 py-3 text-surface-900 dark:text-surface-100 placeholder:text-surface-400 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/30 resize-none transition-all disabled:opacity-50"
@@ -337,7 +485,7 @@ export const ChatWindow: React.FC = () => {
           ) : (
             <button
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() && pendingImages.length === 0}
               className="shrink-0 w-11 h-11 sm:w-auto sm:h-auto sm:p-3 flex items-center justify-center rounded-2xl bg-accent hover:bg-accent-hover active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed text-surface-900 transition-all"
               title="Send message"
               aria-label="Send message"
