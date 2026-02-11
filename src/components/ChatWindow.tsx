@@ -3,11 +3,13 @@ import { useChatStore } from '../stores/chatStore';
 import { Message } from './Message';
 import { streamChat, getProviderForModel } from '../utils/api';
 import { MODELS } from '../types';
+import { ApiKeyGuide } from './ApiKeyGuide';
 
 export const ChatWindow: React.FC = () => {
   const [input, setInput] = useState('');
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -179,6 +181,16 @@ export const ChatWindow: React.FC = () => {
             Settings
           </button>
         </div>
+        {!apiKeys.openai && !apiKeys.anthropic && (
+          <button
+            onClick={() => setShowGuide(true)}
+            className="mt-5 inline-flex items-center gap-1.5 text-sm text-accent hover:text-accent-hover font-medium active:scale-[0.98] transition-all"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            First time? Learn how to get an API key
+          </button>
+        )}
+        {showGuide && <ApiKeyGuide onClose={() => setShowGuide(false)} />}
       </div>
     );
   }
@@ -186,6 +198,7 @@ export const ChatWindow: React.FC = () => {
   const availableModels = MODELS.filter((m) => {
     if (m.provider === 'openai' && apiKeys.openai) return true;
     if (m.provider === 'anthropic' && apiKeys.anthropic) return true;
+    if (m.provider === 'google' && apiKeys.google) return true;
     return false;
   });
 

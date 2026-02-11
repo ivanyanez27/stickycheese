@@ -11,7 +11,7 @@ function loadApiKeys(mode: StorageMode): ApiKeys {
     const raw = store.getItem('sc-keys');
     if (raw) return JSON.parse(raw);
   } catch {}
-  return { openai: '', anthropic: '' };
+  return { openai: '', anthropic: '', google: '',};
 }
 
 function saveApiKeys(keys: ApiKeys, mode: StorageMode) {

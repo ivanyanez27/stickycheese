@@ -59,6 +59,7 @@ function resolveUrl(proxyUrl: string | undefined, provider: string, path: string
   const hosts: Record<string, string> = {
     openai: 'https://api.openai.com',
     anthropic: 'https://api.anthropic.com',
+    google: 'https://generativelanguage.googleapis.com',
   };
   return `${hosts[provider]}${path}`;
 }
@@ -226,4 +227,9 @@ async function streamAnthropic(params: StreamParams) {
     }
   }
   onDone();
+}
+
+async function streamGoogle(params: StreamParams) {
+  // Placeholder for future Google model streaming implementation
+  // onError('Google model streaming not implemented yet');
 }

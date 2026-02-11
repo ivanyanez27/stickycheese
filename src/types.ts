@@ -1,4 +1,4 @@
-export type Provider = 'openai' | 'anthropic';
+export type Provider = 'openai' | 'anthropic' | 'google';
 
 export interface ModelConfig {
   id: string;
@@ -16,6 +16,10 @@ export const MODELS: ModelConfig[] = [
   { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'anthropic' },
   { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', provider: 'anthropic' },
   { id: 'claude-opus-4-5-20250918', name: 'Claude Opus 4.5', provider: 'anthropic' },
+  { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', provider: 'google' },
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', provider: 'google' },
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'google' },
+  { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', provider: 'google' },
 ];
 
 export interface Message {
@@ -41,4 +45,5 @@ export type StorageMode = 'session' | 'local';
 export interface ApiKeys {
   openai: string;
   anthropic: string;
+  google: string;
 }

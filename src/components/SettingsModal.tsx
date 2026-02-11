@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useChatStore } from '../stores/chatStore';
+import { ApiKeyGuide } from './ApiKeyGuide';
 
 export const SettingsModal: React.FC = () => {
   const { settingsOpen, setSettingsOpen, apiKeys, setApiKey, proxyUrl, setProxyUrl, storageMode, setStorageMode } =
     useChatStore();
   const [showOpenAI, setShowOpenAI] = useState(false);
   const [showAnthropic, setShowAnthropic] = useState(false);
+  const [showGoogle, setShowGoogle] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   // Lock body scroll when modal open
   useEffect(() => {
@@ -50,6 +53,13 @@ export const SettingsModal: React.FC = () => {
             <p className="text-xs text-surface-500 dark:text-surface-400 mb-4 leading-relaxed">
               Keys are stored only in your browser. They are sent to the provider (directly or via your proxy) and never persisted server-side.
             </p>
+            <button
+              onClick={() => setShowGuide(true)}
+              className="inline-flex items-center gap-1.5 mb-4 text-xs font-medium text-accent hover:text-accent-hover active:scale-[0.98] transition-all"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              How do I get an API key?
+            </button>
 
             {/* OpenAI */}
             <div className="mb-4">
@@ -81,7 +91,7 @@ export const SettingsModal: React.FC = () => {
             </div>
 
             {/* Anthropic */}
-            <div>
+            <div className="mb-4">
               <label className="text-xs font-semibold text-surface-600 dark:text-surface-400 uppercase tracking-wider mb-1.5 block">
                 Anthropic
               </label>
@@ -108,40 +118,36 @@ export const SettingsModal: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
-          
-          {/* API Proxy */}
-          {/*
+
+          {/* Google */}
           <div>
-            <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-1">
-              API Proxy
-              <span className="ml-2 text-[10px] uppercase tracking-wider font-semibold text-surface-500 dark:text-surface-400 bg-surface-100 dark:bg-surface-800 px-1.5 py-0.5 rounded-md">
-                Optional
-              </span>
-            </h3>
-            <p className="text-xs text-surface-500 dark:text-surface-400 mb-3 leading-relaxed">
-              Route API calls through a Cloudflare Worker proxy to avoid CORS issues and keep your API key off the browser network tab. The proxy never stores your key.
-            </p>
-            <input
-              type="url"
-              value={proxyUrl}
-              onChange={(e) => setProxyUrl(e.target.value)}
-              placeholder="https://stickycheese-proxy.yourname.workers.dev"
-              autoComplete="off"
-              className="w-full bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl px-3.5 py-3 text-surface-900 dark:text-surface-100 placeholder:text-surface-400 focus:outline-none focus:ring-2 focus:ring-accent/30 font-mono text-xs"
-            />
-            {proxyUrl && (
-              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-emerald-600 dark:text-emerald-400">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Proxy enabled — calls route through {(() => { try { return new URL(proxyUrl).hostname; } catch { return proxyUrl; } })()}
+              <label className="text-xs font-semibold text-surface-600 dark:text-surface-400 uppercase tracking-wider mb-1.5 block">
+                Google
+              </label>
+              <div className="relative">
+                <input
+                  type={showGoogle ? 'text' : 'password'}
+                  value={apiKeys.google}
+                  onChange={(e) => setApiKey('google', e.target.value)}
+                  placeholder="AIza..."
+                  autoComplete="off"
+                  className="w-full bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl px-3.5 py-3 pr-16 text-surface-900 dark:text-surface-100 placeholder:text-surface-400 focus:outline-none focus:ring-2 focus:ring-accent/30 font-mono"
+                />
+                <button
+                  onClick={() => setShowGoogle(!showGoogle)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 text-xs font-medium text-surface-500 hover:text-surface-700 dark:hover:text-surface-300 active:text-accent transition-colors"
+                >
+                  {showGoogle ? 'Hide' : 'Show'}
+                </button>
               </div>
-            )}
-            {!proxyUrl && (
-              <p className="text-[11px] text-surface-400 dark:text-surface-500 mt-1.5">
-                Leave empty to call providers directly from the browser.
-              </p>
-            )}
-          </div> */}
+              {apiKeys.google && (
+                <div className="flex items-center gap-1.5 mt-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Key saved
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Storage mode */}
           <div>
@@ -222,6 +228,7 @@ export const SettingsModal: React.FC = () => {
           </div>
         </div>
       </div>
+      {showGuide && <ApiKeyGuide onClose={() => setShowGuide(false)} />}
     </div>
   );
 };
