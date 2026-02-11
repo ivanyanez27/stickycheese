@@ -109,8 +109,9 @@ export const SettingsModal: React.FC = () => {
               )}
             </div>
           </div>
-
+          
           {/* API Proxy */}
+          {/*
           <div>
             <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-1">
               API Proxy
@@ -140,7 +141,7 @@ export const SettingsModal: React.FC = () => {
                 Leave empty to call providers directly from the browser.
               </p>
             )}
-          </div>
+          </div> */}
 
           {/* Storage mode */}
           <div>
